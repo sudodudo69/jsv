@@ -1,28 +1,26 @@
-addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event.request));
-});
+/// <reference types="@fastly/js-compute" />
 
-async function handleRequest(request) {
+async function handler(event) {
   try {
     // Make a request to the Binance API
     const binanceResponse = await fetch(
       "https://api.binance.com/api/v3/depth?limit=10&symbol=BTCUSDT",
-      { method: request.method, headers: request.headers }
+      { method: "GET" }
     );
 
-    // Read the response body as text
-    const responseBody = await binanceResponse.text();
-
-    // Create a new response with the same body and headers
-    return new Response(responseBody, {
+    // Create a new response with the Binance API response body and headers
+    return new Response(binanceResponse.body, {
       status: binanceResponse.status,
       statusText: binanceResponse.statusText,
       headers: binanceResponse.headers,
     });
   } catch (error) {
-    console.error('Error fetching Binance API:', error);
+    console.error('Error proxying request to Binance API:', error);
 
     // If there's an error, respond with a 500 Internal Server Error
     return new Response('Internal Server Error', { status: 500 });
   }
 }
+
+// eslint-disable-next-line no-restricted-globals
+addEventListener("fetch", (event) => event.respondWith(handler(event)));
